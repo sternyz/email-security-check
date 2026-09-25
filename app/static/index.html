@@ -220,7 +220,8 @@ form.addEventListener('submit', async (event) => {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new Error(body.detail ? JSON.stringify(body.detail) : 'That email address didn\'t look right.');
+      // Rate-limit/busy responses carry a plain message; validation errors don't.
+      throw new Error(typeof body.detail === 'string' ? body.detail : 'That email address didn\'t look right.');
     }
 
     const data = await response.json();
