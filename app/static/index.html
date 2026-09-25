@@ -3,176 +3,313 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Email Security Checker</title>
+<title>Email Security Checker | Factory IT</title>
+<link rel="icon" type="image/png" href="/static/favicon.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="preload" href="/static/fonts/BarlowCondensed-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/Barlow-400.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* Barlow / Barlow Condensed (SIL OFL), latin subset, self-hosted so the page
+     makes no third-party requests. Visual language follows the Factory IT
+     Service Catalog (Sep 2026): orange #FE8709, ink #1D2730, steel #5C6B77. */
+  @font-face { font-family: 'Barlow'; font-weight: 400; font-display: swap; src: url(/static/fonts/Barlow-400.woff2) format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 500; font-display: swap; src: url(/static/fonts/Barlow-500.woff2) format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 600; font-display: swap; src: url(/static/fonts/Barlow-600.woff2) format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 700; font-display: swap; src: url(/static/fonts/Barlow-700.woff2) format('woff2'); }
+  @font-face { font-family: 'Barlow Condensed'; font-weight: 600; font-display: swap; src: url(/static/fonts/BarlowCondensed-600.woff2) format('woff2'); }
+  @font-face { font-family: 'Barlow Condensed'; font-weight: 700; font-display: swap; src: url(/static/fonts/BarlowCondensed-700.woff2) format('woff2'); }
+
   :root {
     color-scheme: light;
-    --bg: #f7f7f5;
-    --card-bg: #ffffff;
-    --text: #1a1a1a;
-    --muted: #5a5a5a;
-    --border: #e2e2e0;
-    --accent: #1f5f4f;
-    --pass: #1f7a4d;
-    --warn: #a56a00;
-    --fail: #b3261e;
+    --ink: #1D2730;
+    --ink-2: #26323D;
+    --steel: #5C6B77;
+    --steel-light: #B9C4CC;
+    --steel-dim: #8FA0AC;
+    --rule: #D5DBE0;
+    --mist: #EEF2F4;
+    --body-text: #34424D;
+    --orange: #FE8709;
+    --orange-dk: #C45F00;
+    --pass: #1E7B47;  --pass-bg: #E6F4EC;
+    --warn: #9A5B00;  --warn-bg: #FFF3DC;
+    --fail: #C0292B;  --fail-bg: #FCE8E8;
+    --condensed: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
     margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #fff;
+    color: var(--ink);
+    font-family: 'Barlow', -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 17px;
     line-height: 1.5;
   }
-  .wrap {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 48px 20px 96px;
-  }
-  h1 {
-    font-size: 2rem;
-    margin: 0 0 16px;
-  }
-  .sub {
-    color: var(--muted);
-    font-size: 1.05rem;
-    margin: 0 0 32px;
-  }
-  form {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  input[type="email"] {
-    flex: 1 1 260px;
-    padding: 12px 14px;
-    font-size: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  button {
-    padding: 12px 20px;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    background: var(--accent);
+  h1, h2, h3 { font-family: var(--condensed); margin: 0; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- Hero (dark, like the catalog cover) ---- */
+  .hero {
+    background: var(--ink);
     color: #fff;
-    cursor: pointer;
+    border-left: 14px solid var(--orange);
   }
-  button:disabled {
-    opacity: 0.6;
-    cursor: default;
+  .hero .container { padding-top: 40px; padding-bottom: 64px; }
+  .logo-tile { display: inline-block; line-height: 0; }
+  .logo-tile img { width: 168px; height: auto; display: block; }
+  .hero h1 {
+    margin-top: 56px;
+    font-size: clamp(2.6rem, 7vw, 4.6rem);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    max-width: 17ch;
   }
-  button.secondary {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
+  .hero .sub {
+    color: var(--steel-light);
+    font-size: 1.12rem;
+    font-weight: 500;
+    max-width: 60ch;
+    margin: 24px 0 32px;
   }
-  .microcopy {
-    color: var(--muted);
-    font-size: 0.85rem;
-    margin-top: 10px;
-  }
-  #error {
-    color: var(--fail);
-    margin-top: 12px;
-    display: none;
-  }
-  #results { display: none; margin-top: 40px; }
-  .banner {
-    padding: 20px;
-    border-radius: 10px;
+  form { display: flex; gap: 10px; flex-wrap: wrap; max-width: 620px; }
+  input[type="email"] {
+    flex: 1 1 280px;
+    padding: 14px 16px;
+    font: inherit;
     font-size: 1.05rem;
-    margin-bottom: 28px;
-    border: 1px solid var(--border);
+    color: var(--ink);
+    background: #fff;
+    border: 2px solid transparent;
+    border-radius: 3px;
   }
-  .banner.all_pass { background: #eaf5ef; border-color: #bfe2cd; }
-  .banner.partial { background: #fdf3e2; border-color: #f0dcb0; }
-  .banner.mostly_fail { background: #fbe9e7; border-color: #f0c2bd; }
+  input[type="email"]:focus { outline: none; border-color: var(--orange); }
+  button {
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  .btn-primary {
+    padding: 14px 24px;
+    font-size: 1.05rem;
+    border: none;
+    background: var(--orange);
+    color: var(--ink);
+  }
+  .btn-primary:hover { background: #FF9A2E; }
+  .btn-primary:disabled { opacity: 0.6; cursor: default; }
+  .btn-secondary {
+    padding: 13px 22px;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .btn-secondary:hover { background: var(--ink); color: #fff; }
+  .microcopy { color: var(--steel-dim); font-size: 0.9rem; margin: 12px 0 0; }
+  #error {
+    color: #FFB4A8;
+    background: rgba(192, 41, 43, 0.18);
+    border-left: 4px solid #FF6B5B;
+    padding: 10px 14px;
+    margin: 20px 0 0;
+    max-width: 620px;
+  }
+
+  /* Loading: the six checks, spinning until the response arrives. */
+  .progress { list-style: none; margin: 40px 0 0; padding: 0; max-width: 520px; border-top: 1px solid var(--ink-2); }
+  .progress li {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--ink-2);
+  }
+  .progress .name { font-family: var(--condensed); font-weight: 600; font-size: 1.15rem; min-width: 96px; }
+  .progress .q { color: var(--steel-dim); font-size: 0.95rem; }
+  .spinner {
+    flex: none;
+    width: 16px; height: 16px;
+    border: 2px solid var(--ink-2);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .progress li:nth-child(2) .spinner { animation-delay: -0.13s; }
+  .progress li:nth-child(3) .spinner { animation-delay: -0.26s; }
+  .progress li:nth-child(4) .spinner { animation-delay: -0.4s; }
+  .progress li:nth-child(5) .spinner { animation-delay: -0.53s; }
+  .progress li:nth-child(6) .spinner { animation-delay: -0.66s; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+
+  /* Results summary, shown in the hero once results are in. */
+  .summary h1 { margin-top: 48px; font-size: clamp(2.2rem, 6vw, 3.8rem); max-width: none; word-break: break-word; }
+  .score { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 18px; }
+  .score-text { font-family: var(--condensed); font-weight: 600; font-size: 1.5rem; }
+  .score-text b { color: var(--orange); font-weight: 700; }
+  .meter { display: flex; gap: 6px; }
+  .meter span { width: 22px; height: 22px; border-radius: 2px; }
+  .meter .pass { background: #3DAA6B; }
+  .meter .warn { background: #F2B233; }
+  .meter .fail { background: #E5484D; }
+  .link-btn {
+    background: none; border: none; padding: 0;
+    color: var(--steel-light);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-top: 24px;
+  }
+  .link-btn:hover { color: #fff; }
+
+  /* ---- Results body (white, like the catalog's inside pages) ---- */
+  main { padding: 48px 0 16px; }
+  .banner {
+    border-left: 6px solid var(--steel);
+    background: var(--mist);
+    padding: 18px 22px;
+    font-size: 1.12rem;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 36px;
+  }
+  .banner.all_pass { border-color: var(--pass); background: var(--pass-bg); }
+  .banner.partial { border-color: var(--orange); background: var(--warn-bg); }
+  .banner.mostly_fail { border-color: var(--fail); background: var(--fail-bg); }
+
   .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 24px;
+    padding: 22px 0;
+    border-top: 1px solid var(--rule);
   }
-  .card-label {
-    font-size: 0.75rem;
+  .card:last-child { border-bottom: 1px solid var(--rule); }
+  .card-label { font-family: var(--condensed); font-weight: 700; font-size: 1.35rem; line-height: 1.1; }
+  .status {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+    padding: 3px 10px 3px 7px;
+    border-radius: 2px;
+    font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--muted);
   }
-  .card h3 {
-    margin: 4px 0 8px;
-    font-size: 1.15rem;
+  .status svg { width: 14px; height: 14px; flex: none; }
+  .status.pass { background: var(--pass-bg); color: var(--pass); }
+  .status.warn { background: var(--warn-bg); color: var(--warn); }
+  .status.fail { background: var(--fail-bg); color: var(--fail); }
+  .card h3 { font-size: 1.3rem; font-weight: 600; line-height: 1.2; margin-bottom: 6px; }
+  .card p { margin: 0; color: var(--body-text); }
+  details { margin-top: 12px; }
+  summary {
+    cursor: pointer;
+    color: var(--steel);
+    font-size: 0.88rem;
+    font-weight: 600;
   }
-  .status {
-    display: inline-block;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 999px;
-    margin-bottom: 8px;
-  }
-  .status.pass { background: #eaf5ef; color: var(--pass); }
-  .status.warn { background: #fdf3e2; color: var(--warn); }
-  .status.fail { background: #fbe9e7; color: var(--fail); }
-  .card p { margin: 0 0 8px; color: var(--text); }
-  details { margin-top: 8px; }
-  summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+  summary:hover { color: var(--ink); }
   pre {
     white-space: pre-wrap;
     word-break: break-word;
-    background: #f2f2f0;
-    border-radius: 6px;
-    padding: 10px;
+    background: var(--mist);
+    border-left: 3px solid var(--orange);
+    padding: 10px 12px;
     font-size: 0.8rem;
-    margin-top: 8px;
+    color: var(--body-text);
+    margin: 8px 0 0;
   }
+
   .cta {
-    margin-top: 32px;
-    padding: 24px;
-    border-radius: 10px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
+    margin-top: 48px;
+    border-left: 6px solid var(--orange);
+    background: var(--mist);
+    padding: 26px 28px;
   }
-  .cta p { margin: 0 0 12px; }
-  .cta .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .cta p { margin: 0 0 12px; font-size: 1.08rem; }
+  .cta p:first-child { font-weight: 600; }
+  .cta .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+
+  /* Like the catalog's closing-page pillars. */
   .positioning {
-    margin-top: 24px;
-    padding: 24px;
-    border-radius: 10px;
-    background: #eef3f1;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    margin-top: 56px;
+    padding-top: 22px;
+    border-top: 3px solid var(--ink);
   }
-  .positioning h2 { margin: 0 0 10px; font-size: 1.2rem; }
-  .positioning p { margin: 0 0 10px; }
+  .positioning h2 { font-size: 1.9rem; font-weight: 700; line-height: 1; }
+  .positioning p { margin: 0 0 12px; color: var(--body-text); }
+  .positioning p:first-child { color: var(--ink); font-weight: 600; font-size: 1.1rem; }
+
+  footer { margin-top: 64px; border-top: 1px solid var(--rule); }
+  footer .container { display: flex; align-items: center; gap: 18px; padding-top: 28px; padding-bottom: 40px; }
+  footer img { width: 120px; height: auto; display: block; }
+  footer a { color: var(--steel); font-weight: 500; text-decoration: none; }
+  footer a:hover { color: var(--ink); text-decoration: underline; }
+  .tagline { margin-left: auto; font-family: var(--condensed); font-weight: 600; font-size: 1.05rem; text-align: right; line-height: 1.2; }
+  .tagline span { display: block; }
+  .tagline span:nth-child(2) { color: var(--orange-dk); }
+
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .container { padding: 0 16px; }
+    .hero { border-left-width: 8px; }
+    .hero .container { padding-top: 28px; padding-bottom: 44px; }
+    .logo-tile img { width: 132px; }
+    .hero h1 { margin-top: 40px; }
+    .btn-primary { flex: 1 1 100%; }
+    .card, .positioning { grid-template-columns: 1fr; gap: 10px; }
+    .card-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .status { margin-top: 0; }
+    .tagline { display: none; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <section id="landing">
-    <h1>Can someone send an email pretending to be you?</h1>
-    <p class="sub">
-      Enter your work email. We check the public records that decide two things:
-      whether anyone can send email as you, and whether your own email is
-      trusted everywhere it lands. Every result explained in plain English,
-      with the full technical detail underneath. Free, no signup.
-    </p>
-    <form id="check-form">
-      <input type="email" id="email" name="email" placeholder="you@yourcompany.com" required>
-      <button type="submit" id="submit-btn">Check My Domain</button>
-    </form>
-    <p class="microcopy">Takes about five seconds. We only read public DNS records — nothing private.</p>
-    <p id="error"></p>
-  </section>
+<header class="hero">
+  <div class="container">
+    <a class="logo-tile" href="https://factoryinfotech.com"><img src="/static/logo.jpg" alt="Factory IT" width="520" height="260"></a>
 
-  <section id="results">
+    <section id="landing">
+      <h1>Can someone send an email pretending to be you?</h1>
+      <p class="sub">
+        Enter your work email. We check the public records that decide two things:
+        whether anyone can send email as you, and whether your own email is
+        trusted everywhere it lands. Every result explained in plain English,
+        with the full technical detail underneath. Free, no signup.
+      </p>
+      <form id="check-form">
+        <input type="email" id="email" name="email" placeholder="you@yourcompany.com" aria-label="Work email" autocomplete="email" required>
+        <button type="submit" class="btn-primary" id="submit-btn">Check My Domain</button>
+      </form>
+      <p class="microcopy">Takes about five seconds. We only read public DNS records — nothing private.</p>
+      <p id="error" role="alert" hidden></p>
+    </section>
+
+    <section id="loading" aria-live="polite" hidden>
+      <ul class="progress" id="progress"></ul>
+    </section>
+
+    <section id="summary" class="summary" hidden>
+      <h1 id="summary-domain"></h1>
+      <div class="score">
+        <span class="score-text" id="score-text"></span>
+        <span class="meter" id="meter" aria-hidden="true"></span>
+      </div>
+      <button type="button" class="link-btn" id="again-btn">Check another domain</button>
+    </section>
+  </div>
+</header>
+
+<main id="results" hidden>
+  <div class="container">
     <div id="banner" class="banner"></div>
     <div id="cards"></div>
 
@@ -180,38 +317,76 @@
       <p>None of this is complicated to fix. Most of it is a handful of DNS records — the kind of thing that should already be handled for you.</p>
       <p>Want us to walk you through fixing what's missing? No cost, no pitch — just send us this report and we'll tell you exactly what to change.</p>
       <div class="actions">
-        <button type="button" title="Coming soon">Email me this report</button>
-        <button type="button" class="secondary" title="Coming soon">Have someone walk me through it</button>
+        <button type="button" class="btn-primary" title="Coming soon">Email me this report</button>
+        <button type="button" class="btn-secondary" title="Coming soon">Have someone walk me through it</button>
       </div>
     </div>
 
-    <div class="positioning">
+    <section class="positioning">
       <h2>Hands-Off IT Management</h2>
-      <p>We handle every problem with your technology — so you don't have to.</p>
-      <p>Stop running around trying to figure out why something broke, how to connect your systems, or which tool is the right one. That's our job now, not yours.</p>
-      <p>The average business owner spends hours every month on IT admin, software decisions, or putting out technical fires. You don't need to spend a single one of them.</p>
-    </div>
-  </section>
+      <div>
+        <p>We handle every problem with your technology — so you don't have to.</p>
+        <p>Stop running around trying to figure out why something broke, how to connect your systems, or which tool is the right one. That's our job now, not yours.</p>
+        <p>The average business owner spends hours every month on IT admin, software decisions, or putting out technical fires. You don't need to spend a single one of them.</p>
+      </div>
+    </section>
+  </div>
+</main>
 
-</div>
+<footer>
+  <div class="container">
+    <a href="https://factoryinfotech.com"><img src="/static/logo.jpg" alt="Factory IT" width="520" height="260"></a>
+    <a href="https://factoryinfotech.com">factoryinfotech.com</a>
+    <div class="tagline"><span>Predictable technology.</span><span>Serious security.</span><span>Dependable service.</span></div>
+  </div>
+</footer>
 
 <script>
-const form = document.getElementById('check-form');
-const submitBtn = document.getElementById('submit-btn');
-const errorEl = document.getElementById('error');
-const landing = document.getElementById('landing');
-const resultsSection = document.getElementById('results');
-const bannerEl = document.getElementById('banner');
-const cardsEl = document.getElementById('cards');
+// Mirrors checks/runner.py CHECKS (label + headline), for the loading list only.
+const CHECKS = [
+  ['DMARC', 'Is impersonation actually stopped'],
+  ['SPF', 'Is your sender list still working'],
+  ['DKIM', 'Is your mail signed'],
+  ['MTA-STS', 'Is incoming mail encrypted'],
+  ['DNSSEC', 'Can your DNS be forged'],
+  ['Subdomains', 'The gap behind a pass'],
+];
+const STATUS_ORDER = { fail: 0, warn: 1, pass: 2 };
+const ICONS = {
+  pass: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
+  warn: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 3v6.5"/><path d="M8 12.8v.2"/></svg>',
+  fail: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+};
+
+const $ = (id) => document.getElementById(id);
+const form = $('check-form');
+const submitBtn = $('submit-btn');
+const errorEl = $('error');
+
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
+
+$('progress').innerHTML = CHECKS.map(([name, q]) =>
+  `<li><span class="spinner" aria-hidden="true"></span><span class="name">${name}</span><span class="q">${q}</span></li>`
+).join('');
+
+function show(view) {
+  $('landing').hidden = view !== 'landing';
+  $('loading').hidden = view !== 'loading';
+  $('summary').hidden = view !== 'summary';
+  $('results').hidden = view !== 'summary';
+}
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  errorEl.style.display = 'none';
+  errorEl.hidden = true;
   submitBtn.disabled = true;
   submitBtn.textContent = 'Checking…';
+  show('loading');
 
   try {
-    const email = document.getElementById('email').value;
+    const email = $('email').value;
     const response = await fetch('/api/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -227,37 +402,52 @@ form.addEventListener('submit', async (event) => {
     const data = await response.json();
     renderResults(data);
   } catch (err) {
+    show('landing');
     errorEl.textContent = err.message;
-    errorEl.style.display = 'block';
+    errorEl.hidden = false;
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Check My Domain';
   }
 });
 
+$('again-btn').addEventListener('click', () => {
+  show('landing');
+  $('email').value = '';
+  window.scrollTo(0, 0);
+  $('email').focus();
+});
+
 function renderResults(data) {
-  bannerEl.className = 'banner ' + data.verdict.level;
-  bannerEl.textContent = data.verdict.message;
+  const results = [...data.results].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+  const passing = results.filter((r) => r.status === 'pass').length;
 
-  cardsEl.innerHTML = '';
-  for (const result of data.results) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-label">${result.label}</div>
-      <span class="status ${result.status}">${result.status}</span>
-      <h3>${result.headline}</h3>
-      <p>${result.explanation}</p>
-      <details>
-        <summary>Technical detail</summary>
-        <pre>${(result.raw_evidence || '(none found)').replace(/</g, '&lt;')}</pre>
-      </details>
-    `;
-    cardsEl.appendChild(card);
-  }
+  $('summary-domain').textContent = data.domain;
+  $('score-text').innerHTML = `<b>${passing}</b> of ${results.length} passing`;
+  $('meter').innerHTML = results.map((r) => `<span class="${r.status}"></span>`).join('');
 
-  landing.style.display = 'none';
-  resultsSection.style.display = 'block';
+  $('banner').className = 'banner ' + data.verdict.level;
+  $('banner').textContent = data.verdict.message;
+
+  $('cards').innerHTML = results.map((r) => `
+    <article class="card">
+      <div class="card-label">
+        ${escapeHtml(r.label)}
+        <div><span class="status ${r.status}">${ICONS[r.status] || ''}${escapeHtml(r.status)}</span></div>
+      </div>
+      <div>
+        <h3>${escapeHtml(r.headline)}</h3>
+        <p>${escapeHtml(r.explanation)}</p>
+        <details>
+          <summary>Technical detail</summary>
+          <pre>${escapeHtml(r.raw_evidence || '(none found)')}</pre>
+        </details>
+      </div>
+    </article>
+  `).join('');
+
+  show('summary');
+  window.scrollTo(0, 0);
 }
 </script>
 </body>
