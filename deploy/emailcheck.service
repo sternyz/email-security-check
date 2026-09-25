@@ -1,0 +1,28 @@
+[Unit]
+Description=Email Security Checker (FastAPI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=emailcheck
+Group=emailcheck
+WorkingDirectory=/opt/emailcheck/app
+# Bound to localhost only; Caddy terminates TLS and proxies to it.
+# --proxy-headers so request.client reflects the real visitor IP (needed for
+# Tier 3 rate limiting), trusting only the local proxy.
+ExecStart=/opt/emailcheck/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=on-failure
+RestartSec=3
+
+# Small droplet: cap memory so a runaway request can't starve the box.
+MemoryMax=250M
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/emailcheck
+
+[Install]
+WantedBy=multi-user.target

@@ -7,7 +7,7 @@ A lead-gen tool for Factory IT. Prospect enters a work email, we run six public 
 - **Backend / checks:** Python (use `dnspython` for DNS lookups; `httpx` or `requests` for the MTA-STS policy fetch over HTTPS)
 - **Web framework:** FastAPI
 - **Frontend:** plain HTML/JS served by FastAPI — no heavy frontend framework needed for this scope
-- **Deployment:** DigitalOcean VM, same host as Profitmog. This is co-located, shared infrastructure — treat it that way (see "Deployment notes" below).
+- **Deployment:** Dedicated DigitalOcean VM (134.122.125.24), served at https://dmarc.factoryinfo.tech (see "Deployment notes" below).
 
 ## Build order — follow this, don't skip ahead
 1. Tier 1: the six checks, each in its own file under `checks/`, each independently testable
@@ -24,8 +24,9 @@ Work one check at a time. For each check: implement it, write a test against a k
 - DMARC check must distinguish `p=none` (warn — exists but doesn't block) from `p=quarantine`/`p=reject` (pass) from missing entirely (fail). Don't collapse this to a binary pass/fail.
 
 ## Deployment notes
-- This shares a VM with Profitmog. Run it in its own process/container — don't install dependencies globally on the host, and don't assume you own the whole machine's resources.
-- Flag anything that could affect shared VM resources (memory, open ports, background workers) before implementing it, rather than assuming it's fine.
+- Dedicated VM (not shared with Profitmog), but tiny: 1 vCPU / ~460 MB RAM. Flag anything that adds memory, open ports, or background workers before implementing it.
+- Layout: code at `/opt/emailcheck/app` (git clone), venv at `/opt/emailcheck/venv`, runs as the unprivileged `emailcheck` user via systemd (`deploy/emailcheck.service`) on 127.0.0.1:8000. Caddy (`deploy/Caddyfile`) terminates TLS and proxies to it. Firewall (ufw) allows only 22/80/443.
+- To deploy: push to GitHub, then on the VM run `/opt/emailcheck/app/deploy/update.sh` as root. Keep the unit file and Caddyfile in `deploy/` as the source of truth — `update.sh` installs them.
 
 ## Integration points (details TBD — ask before assuming)
 - **Growably CRM**: lead destination for captured emails. No API details yet — when you get to Tier 3, stub this behind a single function/interface so the actual API call can be swapped in once we have credentials/docs.
