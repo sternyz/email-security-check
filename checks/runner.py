@@ -55,7 +55,7 @@ BANNER_CONSEQUENCES = {
     ("dmarc", "fail"): "nothing stops someone from sending email as your company",
     ("dmarc", "warn"): "email pretending to be you is being watched, not blocked",
     ("spf", "fail"): "your sender list isn't working, so anything can claim to send as you",
-    ("dkim", "fail"): "your mail isn't signed, so nothing proves a message really came from you",
+    ("dkim", "fail"): "we couldn't find a signature on your mail, so nothing proves a message really came from you",
     ("mta_sts", "fail"): "mail on its way to you can be quietly downgraded to plain text and read in transit",
     ("mta_sts", "warn"): "encryption for incoming mail is only being tested, not enforced",
     ("dnssec", "fail"): "your DNS answers aren't signed, so they can be forged between the lookup and the answer",
