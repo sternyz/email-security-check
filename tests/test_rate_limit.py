@@ -90,6 +90,7 @@ FAKE_RESULTS = [{"key": "dmarc", "status": "pass"}]
 
 @pytest.fixture
 def client(monkeypatch):
+    monkeypatch.setattr(main.leads, "transport", main.leads.LogTransport())
     monkeypatch.setattr(main, "limiter", RateLimiter([(2, 60)]))
     monkeypatch.setattr(main, "check_slots", threading.BoundedSemaphore(1))
     monkeypatch.setattr(main, "run_all_checks", lambda domain: FAKE_RESULTS)

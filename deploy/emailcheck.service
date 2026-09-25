@@ -7,6 +7,10 @@ Wants=network-online.target
 User=emailcheck
 Group=emailcheck
 WorkingDirectory=/opt/emailcheck/app
+# Growably credentials (GROWABLY_TOKEN, GROWABLY_LOCATION_ID). Root-only file
+# on the VM, never in git; read by systemd before dropping to User=. The "-"
+# makes it optional: without it the app runs with the log-only lead stub.
+EnvironmentFile=-/etc/emailcheck.env
 # Bound to localhost only; Caddy terminates TLS and proxies to it.
 # --proxy-headers so request.client reflects the real visitor IP (needed for
 # Tier 3 rate limiting), trusting only the local proxy.

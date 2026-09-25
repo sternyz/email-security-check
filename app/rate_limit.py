@@ -18,6 +18,8 @@ from typing import Callable
 
 # (max requests, window in seconds) per client IP. All limits apply at once.
 PER_IP_LIMITS = [(5, 60), (30, 3600)]
+# Separate, tighter budget for the CTA endpoints, which write to the CRM.
+LEAD_LIMITS = [(5, 60), (20, 3600)]
 MAX_CONCURRENT_CHECKS = 3
 
 _SWEEP_INTERVAL_SECONDS = 300

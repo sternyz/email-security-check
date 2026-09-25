@@ -251,6 +251,31 @@
   .cta p { margin: 0 0 12px; font-size: 1.08rem; }
   .cta p:first-child { font-weight: 600; }
   .cta .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+  .cta button:disabled { opacity: 1; cursor: default; }
+  .cta .btn-primary.done { background: var(--pass-bg); color: var(--pass); }
+  .cta-status { margin: 12px 0 0; font-size: 0.95rem; color: var(--steel); }
+  .cta-status.error { color: var(--fail); }
+  .walkthrough {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 18px;
+    max-width: 560px;
+  }
+  .walkthrough label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--steel); margin-bottom: 4px; }
+  .walkthrough input {
+    width: 100%;
+    padding: 11px 12px;
+    font: inherit;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+  .walkthrough input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 2px rgba(254, 135, 9, 0.25); }
+  .walkthrough .full { grid-column: 1 / -1; }
+  .walkthrough .btn-primary { justify-self: start; }
+  .thanks { margin: 18px 0 0; font-weight: 600; color: var(--pass); }
 
   /* Like the catalog's closing-page pillars. */
   .positioning {
@@ -282,6 +307,8 @@
     .logo-tile img { width: 132px; }
     .hero h1 { margin-top: 40px; }
     .btn-primary { flex: 1 1 100%; }
+    .walkthrough { grid-template-columns: 1fr; }
+    .walkthrough .btn-primary { justify-self: stretch; }
     .card, .positioning { grid-template-columns: 1fr; gap: 10px; }
     .card-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .status { margin-top: 0; }
@@ -307,7 +334,8 @@
         <input type="email" id="email" name="email" placeholder="you@yourcompany.com" aria-label="Work email" autocomplete="email" required>
         <button type="submit" class="btn-primary" id="submit-btn">Check My Domain</button>
       </form>
-      <p class="microcopy">Takes about five seconds. We only read public DNS records — nothing private.</p>
+      <p class="microcopy">Takes about five seconds. We only read public DNS records — nothing private.<br>
+        We'll keep your email so we can follow up about your results.</p>
       <p id="error" role="alert" hidden></p>
     </section>
 
@@ -351,9 +379,28 @@
       <p>None of this is complicated to fix. Most of it is a handful of DNS records — the kind of thing that should already be handled for you.</p>
       <p>Want us to walk you through fixing what's missing? No cost, no pitch — just send us this report and we'll tell you exactly what to change.</p>
       <div class="actions">
-        <button type="button" class="btn-primary" title="Coming soon">Email me this report</button>
-        <button type="button" class="btn-secondary" title="Coming soon">Have someone walk me through it</button>
+        <button type="button" class="btn-primary" id="report-btn">Email me this report</button>
+        <button type="button" class="btn-secondary" id="walk-btn" aria-expanded="false" aria-controls="walk-form">Have someone walk me through it</button>
       </div>
+      <p class="cta-status" id="report-status" role="status" hidden></p>
+
+      <form class="walkthrough" id="walk-form" hidden>
+        <div>
+          <label for="walk-name">Name</label>
+          <input id="walk-name" name="name" autocomplete="name" maxlength="100" required>
+        </div>
+        <div>
+          <label for="walk-phone">Phone (optional)</label>
+          <input id="walk-phone" name="phone" type="tel" autocomplete="tel" maxlength="40">
+        </div>
+        <div class="full" id="walk-email-row" hidden>
+          <label for="walk-email">Work email</label>
+          <input id="walk-email" name="email" type="email" autocomplete="email">
+        </div>
+        <button type="submit" class="btn-primary full" id="walk-submit">Request a walkthrough</button>
+        <p class="cta-status error full" id="walk-error" role="alert" hidden></p>
+      </form>
+      <p class="thanks" id="walk-thanks" role="status" hidden>Thanks — someone from our team will be in touch shortly.</p>
     </div>
 
     <section class="positioning">
@@ -415,28 +462,33 @@ function show(view) {
   $('results').hidden = view !== 'summary';
 }
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
+// The email the current results belong to. Null when results came from a
+// report link (/?d=domain), which carries no email.
+let currentEmail = null;
+
+async function postJson(url, payload, fallbackMessage) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    // Rate-limit/busy/CRM errors carry a plain message; validation errors don't.
+    throw new Error(typeof body.detail === 'string' ? body.detail : fallbackMessage);
+  }
+  return response.json();
+}
+
+async function runCheck(url, payload, email, invalidMessage) {
   errorEl.hidden = true;
   submitBtn.disabled = true;
   submitBtn.textContent = 'Checking…';
   show('loading');
-
   try {
-    const email = $('email').value;
-    const response = await fetch('/api/check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      // Rate-limit/busy responses carry a plain message; validation errors don't.
-      throw new Error(typeof body.detail === 'string' ? body.detail : 'That email address didn\'t look right.');
-    }
-
-    const data = await response.json();
+    const data = await postJson(url, payload, invalidMessage);
+    currentEmail = email;
+    resetCta();
     renderResults(data);
   } catch (err) {
     show('landing');
@@ -446,14 +498,100 @@ form.addEventListener('submit', async (event) => {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Check My Domain';
   }
+}
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const email = $('email').value.trim();
+  runCheck('/api/check', { email }, email, 'That email address didn\'t look right.');
 });
 
 $('again-btn').addEventListener('click', () => {
+  history.replaceState(null, '', '/');
   show('landing');
   $('email').value = '';
   window.scrollTo(0, 0);
   $('email').focus();
 });
+
+// ---- CTA buttons ----
+
+function resetCta() {
+  const reportBtn = $('report-btn');
+  reportBtn.disabled = false;
+  reportBtn.classList.remove('done');
+  reportBtn.textContent = 'Email me this report';
+  // A report link has no email to send the report to.
+  reportBtn.hidden = !currentEmail;
+  $('report-status').hidden = true;
+
+  $('walk-form').hidden = true;
+  $('walk-form').reset();
+  $('walk-btn').hidden = false;
+  $('walk-btn').setAttribute('aria-expanded', 'false');
+  $('walk-email-row').hidden = !!currentEmail;
+  $('walk-email').required = !currentEmail;
+  $('walk-error').hidden = true;
+  $('walk-thanks').hidden = true;
+}
+
+$('report-btn').addEventListener('click', async () => {
+  const btn = $('report-btn');
+  const status = $('report-status');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  status.hidden = true;
+  try {
+    await postJson('/api/lead/report', { email: currentEmail }, 'Something went wrong. Please try again.');
+    btn.classList.add('done');
+    btn.textContent = 'Report on its way';
+    status.className = 'cta-status';
+    status.textContent = `We'll send it to ${currentEmail}.`;
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Email me this report';
+    status.className = 'cta-status error';
+    status.textContent = err.message;
+  }
+  status.hidden = false;
+});
+
+$('walk-btn').addEventListener('click', () => {
+  $('walk-btn').hidden = true;
+  $('walk-btn').setAttribute('aria-expanded', 'true');
+  $('walk-form').hidden = false;
+  $('walk-name').focus();
+});
+
+$('walk-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const submit = $('walk-submit');
+  const errorBox = $('walk-error');
+  submit.disabled = true;
+  submit.textContent = 'Sending…';
+  errorBox.hidden = true;
+  try {
+    await postJson('/api/lead/walkthrough', {
+      email: currentEmail || $('walk-email').value.trim(),
+      name: $('walk-name').value,
+      phone: $('walk-phone').value,
+    }, 'Please check your name, phone and email.');
+    $('walk-form').hidden = true;
+    $('walk-thanks').hidden = false;
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.hidden = false;
+  } finally {
+    submit.disabled = false;
+    submit.textContent = 'Request a walkthrough';
+  }
+});
+
+// ---- Report links: /?d=example.com re-runs that domain's report ----
+const linkedDomain = new URLSearchParams(location.search).get('d');
+if (linkedDomain) {
+  runCheck('/api/check-domain', { domain: linkedDomain }, null, 'That report link doesn\'t look right. Enter your email to run a new check.');
+}
 
 function displayStatus(r) {
   return r.tier === 'extra' && r.status !== 'pass' ? 'soft' : r.status;
