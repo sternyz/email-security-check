@@ -147,14 +147,21 @@
 
   /* Results summary, shown in the hero once results are in. */
   .summary h1 { margin-top: 48px; font-size: clamp(2.2rem, 6vw, 3.8rem); max-width: none; word-break: break-word; }
-  .score { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 18px; }
+  .scores { display: flex; align-items: flex-end; gap: 16px 40px; flex-wrap: wrap; margin-top: 18px; }
+  .score { display: flex; align-items: center; gap: 14px; }
   .score-text { font-family: var(--condensed); font-weight: 600; font-size: 1.5rem; }
   .score-text b { color: var(--orange); font-weight: 700; }
+  .score.extra .score-text { font-size: 1.1rem; color: var(--steel-light); }
+  .score.extra .score-text b { color: #fff; }
   .meter { display: flex; gap: 6px; }
   .meter span { width: 22px; height: 22px; border-radius: 2px; }
   .meter .pass { background: #3DAA6B; }
   .meter .warn { background: #F2B233; }
   .meter .fail { background: #E5484D; }
+  .score.extra .meter { gap: 4px; }
+  .score.extra .meter span { width: 12px; height: 12px; }
+  .score.extra .meter .pass { background: #3DAA6B; }
+  .score.extra .meter .soft { background: var(--steel); }
   .link-btn {
     background: none; border: none; padding: 0;
     color: var(--steel-light);
@@ -176,10 +183,15 @@
     color: var(--ink);
     margin-bottom: 36px;
   }
-  .banner.all_pass { border-color: var(--pass); background: var(--pass-bg); }
+  .banner.all_pass, .banner.core_pass { border-color: var(--pass); background: var(--pass-bg); }
   .banner.partial { border-color: var(--orange); background: var(--warn-bg); }
   .banner.mostly_fail { border-color: var(--fail); background: var(--fail-bg); }
 
+  .group-head { margin: 0 0 4px; }
+  .group-head h2 { font-size: 1.7rem; font-weight: 700; line-height: 1.05; }
+  .group-head p { margin: 4px 0 14px; color: var(--steel); }
+  .group-head.extra { margin-top: 48px; }
+  .group-head.extra h2 { font-size: 1.35rem; }
   .card {
     display: grid;
     grid-template-columns: 180px 1fr;
@@ -187,7 +199,7 @@
     padding: 22px 0;
     border-top: 1px solid var(--rule);
   }
-  .card:last-child { border-bottom: 1px solid var(--rule); }
+  .cards .card:last-child { border-bottom: 1px solid var(--rule); }
   .card-label { font-family: var(--condensed); font-weight: 700; font-size: 1.35rem; line-height: 1.1; }
   .status {
     display: inline-flex; align-items: center; gap: 6px;
@@ -203,8 +215,14 @@
   .status.pass { background: var(--pass-bg); color: var(--pass); }
   .status.warn { background: var(--warn-bg); color: var(--warn); }
   .status.fail { background: var(--fail-bg); color: var(--fail); }
+  .status.soft { background: var(--mist); color: var(--steel); }
   .card h3 { font-size: 1.3rem; font-weight: 600; line-height: 1.2; margin-bottom: 6px; }
   .card p { margin: 0; color: var(--body-text); }
+  /* Extra-hardening cards: same layout, quieter. */
+  .card.small { padding: 14px 0; }
+  .card.small .card-label { font-size: 1.1rem; }
+  .card.small h3 { font-size: 1.08rem; margin-bottom: 4px; }
+  .card.small p { font-size: 0.94rem; }
   details { margin-top: 12px; }
   summary {
     cursor: pointer;
@@ -299,9 +317,15 @@
 
     <section id="summary" class="summary" hidden>
       <h1 id="summary-domain"></h1>
-      <div class="score">
-        <span class="score-text" id="score-text"></span>
-        <span class="meter" id="meter" aria-hidden="true"></span>
+      <div class="scores">
+        <div class="score">
+          <span class="score-text" id="core-score"></span>
+          <span class="meter" id="core-meter" aria-hidden="true"></span>
+        </div>
+        <div class="score extra">
+          <span class="score-text" id="extra-score"></span>
+          <span class="meter" id="extra-meter" aria-hidden="true"></span>
+        </div>
       </div>
       <button type="button" class="link-btn" id="again-btn">Check another domain</button>
     </section>
@@ -311,7 +335,17 @@
 <main id="results" hidden>
   <div class="container">
     <div id="banner" class="banner"></div>
-    <div id="cards"></div>
+    <div class="group-head">
+      <h2>The essentials</h2>
+      <p>These three decide whether someone can send email pretending to be you.</p>
+    </div>
+    <div class="cards" id="core-cards"></div>
+
+    <div class="group-head extra">
+      <h2>Extra hardening</h2>
+      <p>Worth adding once the essentials are covered.</p>
+    </div>
+    <div class="cards" id="extra-cards"></div>
 
     <div class="cta">
       <p>None of this is complicated to fix. Most of it is a handful of DNS records — the kind of thing that should already be handled for you.</p>
@@ -356,7 +390,10 @@ const ICONS = {
   pass: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
   warn: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 3v6.5"/><path d="M8 12.8v.2"/></svg>',
   fail: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+  soft: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/></svg>',
 };
+// Extra-hardening checks that don't pass get a soft marker instead of warn/fail.
+const SOFT_LABEL = 'Recommended';
 
 const $ = (id) => document.getElementById(id);
 const form = $('check-form');
@@ -418,22 +455,18 @@ $('again-btn').addEventListener('click', () => {
   $('email').focus();
 });
 
-function renderResults(data) {
-  const results = [...data.results].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
-  const passing = results.filter((r) => r.status === 'pass').length;
+function displayStatus(r) {
+  return r.tier === 'extra' && r.status !== 'pass' ? 'soft' : r.status;
+}
 
-  $('summary-domain').textContent = data.domain;
-  $('score-text').innerHTML = `<b>${passing}</b> of ${results.length} passing`;
-  $('meter').innerHTML = results.map((r) => `<span class="${r.status}"></span>`).join('');
-
-  $('banner').className = 'banner ' + data.verdict.level;
-  $('banner').textContent = data.verdict.message;
-
-  $('cards').innerHTML = results.map((r) => `
-    <article class="card">
+function cardHtml(r) {
+  const shown = displayStatus(r);
+  const label = shown === 'soft' ? SOFT_LABEL : r.status;
+  return `
+    <article class="card${r.tier === 'extra' ? ' small' : ''}">
       <div class="card-label">
         ${escapeHtml(r.label)}
-        <div><span class="status ${r.status}">${ICONS[r.status] || ''}${escapeHtml(r.status)}</span></div>
+        <div><span class="status ${shown}">${ICONS[shown] || ''}${escapeHtml(label)}</span></div>
       </div>
       <div>
         <h3>${escapeHtml(r.headline)}</h3>
@@ -443,8 +476,26 @@ function renderResults(data) {
           <pre>${escapeHtml(r.raw_evidence || '(none found)')}</pre>
         </details>
       </div>
-    </article>
-  `).join('');
+    </article>`;
+}
+
+function renderResults(data) {
+  const byStatus = (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+  const core = data.results.filter((r) => r.tier === 'core').sort(byStatus);
+  const extra = data.results.filter((r) => r.tier === 'extra').sort(byStatus);
+  const v = data.verdict;
+
+  $('summary-domain').textContent = data.domain;
+  $('core-score').innerHTML = `Essentials <b>${v.core_passing}</b> of ${v.core_total}`;
+  $('core-meter').innerHTML = core.map((r) => `<span class="${r.status}"></span>`).join('');
+  $('extra-score').innerHTML = `Extra hardening <b>${v.extra_passing}</b> of ${v.extra_total}`;
+  $('extra-meter').innerHTML = extra.map((r) => `<span class="${displayStatus(r)}"></span>`).join('');
+
+  $('banner').className = 'banner ' + v.level;
+  $('banner').textContent = v.message;
+
+  $('core-cards').innerHTML = core.map(cardHtml).join('');
+  $('extra-cards').innerHTML = extra.map(cardHtml).join('');
 
   show('summary');
   window.scrollTo(0, 0);

@@ -34,9 +34,11 @@ def test_check_endpoint_returns_domain_and_six_results():
         "dnssec",
         "subdomains",
     }
-    # anthropic.com is a known partial fixture: mta_sts and dnssec fail, the rest pass.
-    assert body["verdict"]["level"] == "partial"
-    assert body["verdict"]["missing"] == 2
+    assert {r["tier"] for r in body["results"]} == {"core", "extra"}
+    # anthropic.com is a known fixture: core all pass; mta_sts and dnssec fail.
+    assert body["verdict"]["level"] == "core_pass"
+    assert body["verdict"]["core_passing"] == 3
+    assert body["verdict"]["extra_passing"] == 1
 
 
 def test_check_endpoint_rejects_malformed_email():
