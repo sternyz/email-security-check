@@ -10,12 +10,11 @@ ships:
   impersonation risk (DMARC/SPF/DKIM) > interception/integrity risk
   (MTA-STS/DNSSEC) > the narrower Subdomains gap, with fail always
   outranking warn.
-- The literal banner template is "Right now, [most severe fail's
-  consequence]." Splicing a full FAIL_EXPLANATION sentence after "Right
-  now," reads badly (the explanations are self-contained sentences meant
-  to stand alone in their own card, not sentence fragments). Implemented
-  as "{explanation} Here's what's missing..." instead, dropping the
-  "Right now," lead-in.
+- The banner template is "Right now, [most severe fail's consequence]."
+  The card explanations are standalone sentences that don't fit after
+  "Right now,", so each check has its own short consequence clause in
+  BANNER_CONSEQUENCES below (banner-only copy, drafted to match the
+  spec's tone; not in requirements.md).
 - "Mostly/all fail" vs. "Partial" isn't given a numeric threshold —
   implemented as 5 or 6 of 6 missing.
 """
@@ -49,6 +48,19 @@ CHECKS = [
 ]
 
 _PRIORITY = {key: index for index, (key, *_rest) in enumerate(CHECKS)}
+
+# Completes "Right now, ___." in the partial-verdict banner, keyed by
+# (check key, status). Only statuses a check can actually return are listed.
+BANNER_CONSEQUENCES = {
+    ("dmarc", "fail"): "nothing stops someone from sending email as your company",
+    ("dmarc", "warn"): "email pretending to be you is being watched, not blocked",
+    ("spf", "fail"): "your sender list isn't working, so anything can claim to send as you",
+    ("dkim", "fail"): "your mail isn't signed, so nothing proves a message really came from you",
+    ("mta_sts", "fail"): "mail on its way to you can be quietly downgraded to plain text and read in transit",
+    ("mta_sts", "warn"): "encryption for incoming mail is only being tested, not enforced",
+    ("dnssec", "fail"): "your DNS answers aren't signed, so they can be forged between the lookup and the answer",
+    ("subdomains", "fail"): "your subdomains are left open behind a protected main domain",
+}
 
 
 def run_all_checks(domain: str) -> list[dict]:
@@ -88,5 +100,9 @@ def compute_verdict(results: list[dict]) -> dict:
 
     non_passing = [r for r in results if r["status"] != "pass"]
     worst = _most_severe(non_passing)
-    message = f"Your domain is missing {missing} of {total} protections. {worst['explanation']} Here's what's missing and what it means."
+    consequence = BANNER_CONSEQUENCES[(worst["key"], worst["status"])]
+    message = (
+        f"Your domain is missing {missing} of {total} protections. "
+        f"Right now, {consequence}. Here's what's missing and what it means."
+    )
     return {"level": "partial", "message": message, "missing": missing, "total": total}
