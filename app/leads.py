@@ -11,9 +11,9 @@ is picked at startup from the environment:
 Growably workflows key off the tags (see TAG_* below) to send the report
 email and notify the team — the app only records the lead.
 
-HighLevelTransport follows the public v2 docs but has NOT been verified
-against a live Growably account yet (no token at time of writing). Confirm
-the request shapes the first time it runs for real.
+HighLevelTransport was verified against the live Growably sub-account on
+2026-09-25 (upsert, add-tags and note all landed as expected). The token
+needs contacts read/write; it doesn't have locations read, and doesn't need it.
 """
 
 import logging

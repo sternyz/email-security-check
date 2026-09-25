@@ -2,7 +2,7 @@
 
 No network and no CRM: endpoints run against a recording stub transport, and
 HighLevelTransport is driven through httpx.MockTransport to pin the request
-shapes it sends (per the HighLevel v2 docs — not yet verified live).
+shapes it sends (verified once against the live Growably account).
 """
 
 import json
